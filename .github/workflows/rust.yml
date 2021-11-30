@@ -1,4 +1,4 @@
-name: build
+name: Rust
 
 on: [push]
 
@@ -10,24 +10,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+  
+    - name: 🔒 Generate lockfile
+      run: cargo generate-lockfile
 
-      - name: Install latest rust toolchain
-        uses: actions-rs/toolchain@v1
+    - name: ⚡ Cargo Cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      # with:
+      #   path: |
+      #       ~/.cargo/registry
+      #       ~/.cargo/git
+      #       target
+      #   key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+      #   # restore-keys: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: 🔨 Build
+      run: cargo build --all-targets --release
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          default: true
-          override: true
-
-      - name: Build
-        run: cargo build --all --release && strip target/release/RTLS
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            target/release/RTLS
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            toolchain: stable
+            components: rustfmt
+            override: true
+      - run: cargo fmt --all -- --check

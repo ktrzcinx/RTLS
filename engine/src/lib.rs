@@ -1,7 +1,7 @@
 pub mod device;
-pub mod zone;
 pub mod measure;
 pub mod utils;
+pub mod zone;
 
 #[cfg(test)]
 mod tests {
@@ -12,5 +12,5 @@ mod tests {
 }
 
 pub fn hello() {
-	println!("Hello, world!");
+    println!("Hello, world!");
 }

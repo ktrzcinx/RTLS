@@ -1,0 +1,12 @@
+[[anchor]]
+id= 100
+pos= [0,0,0]
+[[anchor]]
+id= 102
+pos= [100,0,0]
+[[anchor]]
+id= 103
+pos= [0,100,0]
+[[anchor]]
+id= 104
+pos= [100,100,0]
