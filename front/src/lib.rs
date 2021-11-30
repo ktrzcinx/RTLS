@@ -1,10 +1,10 @@
 mod utils;
 extern crate js_sys;
 
+use serde::{Deserialize, Serialize};
 use std::cmp::{max, min};
 use std::collections::VecDeque;
 use wasm_bindgen::prelude::*;
-use serde::{Serialize, Deserialize};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -28,12 +28,11 @@ macro_rules! console_error {
 // Define WASM structures
 //
 
-const MEASURE_DEPTH : usize = 5;
-const POSITION_TRACE_DEPTH : usize = 3;
+const MEASURE_DEPTH: usize = 5;
+const POSITION_TRACE_DEPTH: usize = 3;
 
 #[wasm_bindgen]
-#[derive(Serialize, Deserialize)]
-#[derive(Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct Trace {
     cord: [f32; 3],
     timestamp: u32,
@@ -84,10 +83,12 @@ pub struct Zone {
 // Implement private traits
 //
 
-
-fn array_insert_pop<T>(arr: &mut [T; MEASURE_DEPTH], new_val: T) -> &[T; MEASURE_DEPTH] where T: Copy {
+fn array_insert_pop<T>(arr: &mut [T; MEASURE_DEPTH], new_val: T) -> &[T; MEASURE_DEPTH]
+where
+    T: Copy,
+{
     for i in 1..MEASURE_DEPTH {
-        arr[i] = arr[i-1];
+        arr[i] = arr[i - 1];
     }
     arr[0] = new_val;
     arr
@@ -121,9 +122,9 @@ impl DeviceData {
 
     pub fn new_with_pos(id: u32, x: i32, y: i32, z: i32) -> DeviceData {
         let pos = Trace {
-                timestamp: 0,
-                cord: [x as f32, y as f32, z as f32],
-            };
+            timestamp: 0,
+            cord: [x as f32, y as f32, z as f32],
+        };
         let mut dev = DeviceData {
             id: id,
             timestamp: 0,
@@ -133,9 +134,12 @@ impl DeviceData {
         dev
     }
 
-    pub fn calc_position(&self, measures: &Vec<&MeasureList>,
-            devices: &Vec<&DeviceData>, timestamp: u32) -> Trace
-    {
+    pub fn calc_position(
+        &self,
+        measures: &Vec<&MeasureList>,
+        devices: &Vec<&DeviceData>,
+        timestamp: u32,
+    ) -> Trace {
         // new position calculation or extrapolation when calculation is fresher than measurements
         // fake calculation or estimation when calculation is fresher than measurements
         //todo: Add position calculation
@@ -152,15 +156,13 @@ impl DeviceData {
         new_pos
     }
 
-    pub fn estimate_position(&self, timestamp: u32) -> Trace
-    {
+    pub fn estimate_position(&self, timestamp: u32) -> Trace {
         let mut pos = *self.trace.front().unwrap();
         pos.timestamp = timestamp;
         pos
     }
 
-    pub fn save_position(&mut self, pos: Trace)
-    {
+    pub fn save_position(&mut self, pos: Trace) {
         // limit trace length
         while self.trace.len() + 1 >= POSITION_TRACE_DEPTH {
             self.trace.pop_back();
@@ -196,49 +198,56 @@ impl Zone {
         console_log!("New device {} at position {}, {}, {}", id, x, y, z);
     }
 
-    fn calc_dev_position(&self, dev: &DeviceData, timestamp: u32) -> Trace
-    {
-        let measures: Vec<&MeasureList> = self.measures.iter()
+    fn calc_dev_position(&self, dev: &DeviceData, timestamp: u32) -> Trace {
+        let measures: Vec<&MeasureList> = self
+            .measures
+            .iter()
             .filter(|&x| (x.dev[0] == dev.id || x.dev[1] == dev.id))
             .collect();
-        let connected_devices_id: Vec<u32> = measures.iter()
-            .map(|x| if x.dev[0] == dev.id { x.dev[1] } else { x.dev[0] } )
+        let connected_devices_id: Vec<u32> = measures
+            .iter()
+            .map(|x| {
+                if x.dev[0] == dev.id {
+                    x.dev[1]
+                } else {
+                    x.dev[0]
+                }
+            })
             .collect();
-        let devices: Vec<&DeviceData> = self.devices.iter()
+        let devices: Vec<&DeviceData> = self
+            .devices
+            .iter()
             .filter(|&x| connected_devices_id.iter().any(|&v| v == x.id))
             .collect();
         let pos = dev.calc_position(&measures, &devices, timestamp);
         pos
     }
 
-    pub fn update_dev_position(&mut self, id: u32, timestamp: u32)
-    {
-        let dev_index = self.devices.iter()
-            .position(|x| x.id == id)
-            .unwrap();
+    pub fn update_dev_position(&mut self, id: u32, timestamp: u32) {
+        let dev_index = self.devices.iter().position(|x| x.id == id).unwrap();
         let pos = self.calc_dev_position(&self.devices[dev_index], timestamp);
         self.devices[dev_index].save_position(pos);
     }
 
-    pub fn set_dev_position(&mut self, id: u32, x: i32, y: i32, z: i32, timestamp: u32)
-    {
+    pub fn set_dev_position(&mut self, id: u32, x: i32, y: i32, z: i32, timestamp: u32) {
         let pos = Trace {
-                timestamp: timestamp,
-                cord: [x as f32, y as f32, z as f32],
+            timestamp: timestamp,
+            cord: [x as f32, y as f32, z as f32],
         };
-        let dev = self.devices.iter_mut()
-            .find(|x| x.id == id);
+        let dev = self.devices.iter_mut().find(|x| x.id == id);
         match dev {
             Some(d) => d.save_position(pos),
-            None    => self.add_device(id, x, y, z),
+            None => self.add_device(id, x, y, z),
         }
     }
 
     pub fn add_measure(&mut self, id1: u32, id2: u32, distance: f32, timestamp: u32) {
         let id = [min(id1, id2), max(id1, id2)];
-        let ml = self.measures.iter_mut()
+        let ml = self
+            .measures
+            .iter_mut()
             .find(|x| x.dev[0] == id[0] && x.dev[1] == id[1]);
-        let meas = Measure{
+        let meas = Measure {
             distance: distance,
             id: [id[0], id[1]],
             timestamp: timestamp,
@@ -249,12 +258,12 @@ impl Zone {
                 for &i in id.iter() {
                     self.update_dev_position(i, timestamp);
                 }
-            },
+            }
             None => {
                 console_log!("New connection {}-{} {}!", id[0], id[1], meas.distance);
                 let new_ml = MeasureList::new(meas);
                 self.measures.push(new_ml);
-            },
+            }
         }
     }
 
@@ -289,8 +298,8 @@ pub fn init() -> Zone {
     console_error_panic_hook::set_once();
     let mut zone = Zone {
         id: 0,
-        measures:   Vec::new(),
-        devices:    Vec::new(),
+        measures: Vec::new(),
+        devices: Vec::new(),
     };
     let test_device = DeviceData::new(0);
     zone.devices.push(test_device);

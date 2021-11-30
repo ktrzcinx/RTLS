@@ -17,17 +17,13 @@ mod dev_data;
 mod web_comm;
 mod web_data;
 
-pub fn parse(zone : &mut engine::zone::Zone, msg : MessageContext) -> Option<MessageTarget> {
-	let response : Option<MessageTarget>;
-	match &msg.data {
-		MessageSource::DevCommand(cmd) =>
-			response = dev_comm::parse(zone, cmd, &msg.sender),
-		MessageSource::DevData(cmd) =>
-			response = dev_data::parse(zone, cmd, &msg.sender),
-		MessageSource::WebCommand(cmd) =>
-			response = web_comm::parse(zone, cmd, &msg.sender),
-		MessageSource::WebData(cmd) =>
-			response = web_data::parse(zone, cmd, &msg.sender),
-	}
-	response
+pub fn parse(zone: &mut engine::zone::Zone, msg: MessageContext) -> Option<MessageTarget> {
+    let response: Option<MessageTarget>;
+    match &msg.data {
+        MessageSource::DevCommand(cmd) => response = dev_comm::parse(zone, cmd, &msg.sender),
+        MessageSource::DevData(cmd) => response = dev_data::parse(zone, cmd, &msg.sender),
+        MessageSource::WebCommand(cmd) => response = web_comm::parse(zone, cmd, &msg.sender),
+        MessageSource::WebData(cmd) => response = web_data::parse(zone, cmd, &msg.sender),
+    }
+    response
 }

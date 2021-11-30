@@ -1,0 +1,11 @@
+velocity=20
+
+[[point]]
+pos=[0,0,0]
+velocity=1.5
+[[point]]
+pos=[100,0,0]
+[[point]]
+pos=[100,100,0]
+[[point]]
+pos=[0,100,0]
