@@ -1,0 +1,20 @@
+[package]
+name = "server"
+version = "0.1.0"
+authors = ["Karol Trzcinski <k.trzcinski95@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+env_logger="0.8"
+log = "0.4"
+websocket = "0.26"
+rayon = "1.5"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+engine = { path = "../engine" }
+hyper = "*"
+num-traits = "0.2"
+num-derive = "0.2"

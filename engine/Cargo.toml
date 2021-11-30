@@ -1,0 +1,16 @@
+[package]
+name = "engine"
+version = "0.1.0"
+authors = ["Karol Trzcinski <k.trzcinski95@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+nalgebra = "0.20"
+ndarray = "0.13"
+ndarray-linalg = {version = "0.12.1", features = ["intel-mkl"] }
