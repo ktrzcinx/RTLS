@@ -1,17 +1,24 @@
-import * as rtls from "rtls";
+import _ from 'lodash';
+var canvas = require('canvas');
 
-console.log("start");
+// let ws_web_data = new WebSocket("ws://localhost:2794/web_data");
 
-const dev_canvas = document.getElementById("device-map");
+console.log("start")
+
+const dev_canvas = canvas.createCanvas(640, 640);
 dev_canvas.height = 640
 dev_canvas.width = 640
 
 const ctx = dev_canvas.getContext('2d');
+var map = {zoom:0.5, rotation:0.0, offset:[dev_canvas.width/3,dev_canvas.height*2/3], moving:false};
+var devices = new Map();
 
-const zone = rtls.init("ws::localhost:8080", 0);
-
-var map = {zoom:0.5, rotation:0.0, offset:[0,dev_canvas.height], moving:false};
-
+document.body.onmouseup = () => {
+	map.moving = false;
+}
+dev_canvas.onmousedown = () => {
+	map.moving = true;
+}
 dev_canvas.onwheel = (event) => {
 	let real_pointing_pos = pixelsToPos([event.clientX, event.clientY]);
 	map.zoom += -10 * map.zoom / (event.deltaY + map.zoom);
@@ -19,12 +26,6 @@ dev_canvas.onwheel = (event) => {
 	let new_pointing_pixels = posToPixels(real_pointing_pos);
 	map.offset[0] += -new_pointing_pixels[0] + event.clientX;
 	map.offset[1] += -new_pointing_pixels[1] + event.clientY;
-}
-dev_canvas.onmousedown = () => {
-	map.moving = true;
-}
-document.body.onmouseup = () => {
-	map.moving = false;
 }
 dev_canvas.onmousemove = (event) => {
 	if (map.moving) {
@@ -98,6 +99,7 @@ const drawGrid = () => {
 	ctx.restore();
 }
 
+
 function get_img(id)
 {
 	if (typeof get_img.list == 'undefined') {
@@ -144,15 +146,14 @@ function stickToBorders(pos, border) {
 
 const drawDevices = () => {
 	const SIZE = 50
-	var date = new Date();
-	let devs = zone.get_all_devices_position(date.getTime());
 	ctx.save();
 	ctx.fillStyle = "#121540";
 	ctx.font = "25px Arial";
 	ctx.textAlign = "center";
 
-	devs.forEach((elem) => {
-		let pixels_pos = posToPixels(elem.pos.cord);
+	devices.forEach((elem) => {
+        console.log(elem.pos);
+		let pixels_pos = posToPixels(elem.pos.coords);
 		let [pos, real_position] = stickToBorders(pixels_pos, SIZE);
 		if (real_position)
 			ctx.globalAlpha = 1.0;
@@ -160,44 +161,37 @@ const drawDevices = () => {
 			ctx.globalAlpha = 0.7;
 		ctx.drawImage(get_img(elem.id), pos[0] - SIZE / 2, pos[1] - SIZE, SIZE, SIZE);
 		ctx.fillText(elem.id, pos[0], pos[1] + 25);
-		ctx.fillText(Math.round(elem.pos.cord[0]) + ":" + Math.round(elem.pos.cord[1]), pos[0], pos[1] + 45);
+		ctx.fillText(Math.round(elem.pos.coords[0]) + ":" + Math.round(elem.pos.coords[1]), pos[0], pos[1] + 45);
 	});
 	ctx.restore();
 }
 
 let ws_web_data = new WebSocket("ws://localhost:2794/web_data");
 ws_web_data.onopen = function(e) {
-	console.log("ws Connected to backend server");
-	// alert("[open] Connection established");
+	console.log("ws Connected to backend server '%s'.", e.target.url);
 	ws_web_data.send("My name is John");
 };
 
 ws_web_data.onmessage = function(event) {
-	// alert(`[message] Data received from server: ${event.data}`);
-	// console.log(`[message] Data received from server: ${event.data}`);
-	const devices = JSON.parse(event.data);
-	devices.forEach(dev => {
-		console.log(dev.id, dev.pos.coords)
-		const coord = dev.pos.coords
-		zone.set_dev_position(dev.id, coord[0], coord[1], coord[2], dev.pos.timestamp)
+	const devices_msg = JSON.parse(event.data);
+	devices_msg.forEach(dev => {
+        // console.log(dev);
+        // console.log(dev.id, dev.pos.coords)
+        devices.set(dev.id, dev);
+        console.log(devices.size)
 	});
 };
 
 ws_web_data.onclose = function(event) {
 	if (event.wasClean) {
-		// alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
 		console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
 	} else {
-		// e.g. server process killed or network down
-		// event.code is usually 1006 in this case
-		// alert('[close] Connection died');
 		console.log('ws [close] Connection died');
 	}
 };
 
 ws_web_data.onerror = function(error) {
 	console.log('ws error, ${error.message}');
-	// alert(`[error] ${error.message}`);
 };
 
 const renderLoop = () => {
@@ -208,13 +202,6 @@ const renderLoop = () => {
 	requestAnimationFrame(renderLoop);
 };
 
-const test_code = () => {
-	let dev_ptr = zone.get_device_ptr(0);
-	let dev = rtls.device_serialize(dev_ptr);
-	console.log('dev:', dev);
-	let pos = dev.trace[0].cord
-	console.log(pos)
-}
 
-test_code()
+document.body.appendChild(dev_canvas);
 renderLoop()
