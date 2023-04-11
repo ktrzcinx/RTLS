@@ -177,7 +177,7 @@ ws_web_data.onmessage = function(event) {
         // console.log(dev);
         // console.log(dev.id, dev.pos.coords)
         devices.set(dev.id, dev);
-        console.log(devices.size)
+        console.log("Devices counter: %d", devices.size)
 	});
 };
 
