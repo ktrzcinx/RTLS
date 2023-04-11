@@ -152,13 +152,12 @@ const drawDevices = () => {
 	ctx.textAlign = "center";
 
 	devices.forEach((elem) => {
-        console.log(elem.pos);
 		let pixels_pos = posToPixels(elem.pos.coords);
 		let [pos, real_position] = stickToBorders(pixels_pos, SIZE);
 		if (real_position)
 			ctx.globalAlpha = 1.0;
 		else
-			ctx.globalAlpha = 0.7;
+			ctx.globalAlpha = 0.2;
 		ctx.drawImage(get_img(elem.id), pos[0] - SIZE / 2, pos[1] - SIZE, SIZE, SIZE);
 		ctx.fillText(elem.id, pos[0], pos[1] + 25);
 		ctx.fillText(Math.round(elem.pos.coords[0]) + ":" + Math.round(elem.pos.coords[1]), pos[0], pos[1] + 45);
